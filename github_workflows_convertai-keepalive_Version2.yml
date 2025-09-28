@@ -1,0 +1,60 @@
+name: ConvertAI Keepalive
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"          # every 5 minutes
+  workflow_dispatch:               # allow manual run
+  push:
+    paths:
+      - ".github/workflows/convertai-keepalive.yml"
+      - "scripts/ping.js"
+      - "package.json"
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      API_URL: ${{ secrets.API_URL }}
+      WARM_ENDPOINT: ${{ secrets.WARM_ENDPOINT || '/warm' }}
+      PING_TIMEOUT_MS: 8000
+      MAX_RETRIES: 3
+      RETRY_BASE_DELAY_MS: 1500
+      ENABLE_WARM_AFTER_UNWARMED: "true"
+      # Jitter to avoid hitting exact 5:00 boundary each time
+      JITTER_MAX_MS: 20000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Random Jitter (avoid synchronized bursts)
+        run: |
+          JITTER=$(( RANDOM % ${JITTER_MAX_MS} ))
+          echo "Sleeping ${JITTER}ms before ping..."
+          sleep $(echo "${JITTER} / 1000" | bc -l)
+
+      - name: Show Config
+        run: |
+          echo "API_URL=${API_URL}"
+          echo "WARM_ENDPOINT=${WARM_ENDPOINT}"
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install (only prod deps; none here actually)
+        run: npm ci --omit=dev || npm install --omit=dev
+
+      - name: Run Ping Script
+        run: node scripts/ping.js
+        continue-on-error: true  # don't fail the workflow on a transient miss
+
+      - name: Curl Fallback (optional second attempt)
+        run: |
+          set +e
+          echo "Secondary curl attempt:"
+          curl -fsS --max-time 12 "${API_URL}/fast-health" || true
+          curl -fsS --max-time 15 "${API_URL}/healthz" || true
