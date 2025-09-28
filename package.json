@@ -1,0 +1,11 @@
+{
+  "name": "convertai-keepalive",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GitHub Actions + Node script to keep the ConvertAI Replit API warm.",
+  "type": "commonjs",
+  "scripts": {
+    "ping": "node scripts/ping.js"
+  },
+  "dependencies": {}
+}
