@@ -1,10 +1,3 @@
-/**
- * ConvertAI Keepalive Ping Script
- * - Pings fast-health then healthz
- * - Retries on network/502
- * - Optionally calls /warm if not warmed
- */
-
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
