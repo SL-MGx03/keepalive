@@ -91,4 +91,4 @@ Yes—already shortened. If conversions still slow, consider hosting only the UI
 
 ---
 
-© 2025 ConvertAI Keepalive
+© 2025 SL_MGx
